@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	// ErrURLInvalid is returned when the supplied endpoint URL is invalid.
 	ErrURLInvalid = errors.New("client: Invalid endpoint URL")
 )
 
@@ -47,6 +48,3 @@ type Distribution interface {
 	Verify() (bool, error)
 }
 
-type Manifest interface {
-	VerifyManifest(repo)
-}
