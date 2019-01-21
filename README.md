@@ -22,10 +22,6 @@ func main() {
 	cfg := client.Config{
 		Endpoint: "http://127.0.0.1:84832",
 		Transport: client.DefaultTransport,
-
-		// Set timeout per request to fail fast when the registry is
-		// unavailable.
-		HeaderTimeoutPerRequest: time.Second,
 	}
 	c, err := client.New(cfg)
 	if err != nil {
