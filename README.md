@@ -13,9 +13,7 @@ go get github.com/atlaskerr/distribution-client
 ```go
 package main
 
-import (
-	"log"
-)
+import "log"
 
 func main() {
 	cfg := client.Config{
