@@ -17,8 +17,12 @@ import "log"
 
 func main() {
 	cfg := client.Config{
-		Endpoint: "http://127.0.0.1:84832",
+		BaseEndpoint: "http://127.0.0.1:84832",
 		Transport: client.DefaultTransport,
+		Auth: client.BasicAuth{
+			Username: "user",
+			Password: "pass",
+		},
 	}
 	c, err := client.New(cfg)
 	if err != nil {
