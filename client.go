@@ -74,6 +74,15 @@ func New(cfg Config) (*Client, error) {
 	return c, nil
 }
 
+// RoundTrip is the Client implementation of http.RoundTripper. Used to hook
+// into an http.Request before being set to the server.
+func (c *Client) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	if c.Auth != nil {
+		c.Auth.Set(req)
+	}
+	return c.Transport.RoundTrip(req)
+}
+
 // Distribution defines the methods available for interacting with an
 // OCI-compliant registry.
 type Distribution interface {
