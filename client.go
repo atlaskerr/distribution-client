@@ -67,9 +67,16 @@ func New(cfg Config) (*Client, error) {
 		return nil, ErrURLInvalid
 	}
 
+	var transport http.RoundTripper
+	if &cfg.Transport != nil {
+		transport = cfg.Transport
+	} else {
+		transport = &DefaultTransport
+	}
+
 	c := &Client{
 		BaseEndpoint: host,
-		Transport:    cfg.Transport,
+		Transport:    transport,
 	}
 	return c, nil
 }
