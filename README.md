@@ -29,7 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	api := c.NewDistributionAPI()
+	api := client.NewDistributionAPI(c)
 }
 ```
 
