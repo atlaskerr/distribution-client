@@ -1,16 +1,10 @@
 package client
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-)
-
-var (
-	// ErrURLInvalid is returned when the supplied endpoint URL is invalid.
-	ErrURLInvalid = errors.New("client: Invalid endpoint URL")
 )
 
 // DefaultTransport is the optional transport clients may use. Requests to the
@@ -29,6 +23,33 @@ type Config struct {
 	Host      string
 	Transport http.RoundTripper
 	Auth      Authenticator
+}
+
+// New takes a Config and returns a fully initialized Client.
+func New(cfg Config) (*Client, error) {
+	host, _ := url.Parse(cfg.Host)
+
+	var transport http.RoundTripper
+	if cfg.Transport != nil {
+		transport = cfg.Transport
+	} else {
+		transport = &DefaultTransport
+	}
+
+	c := &Client{
+		Host:      host,
+		Transport: transport,
+	}
+	return c, nil
+}
+
+// RoundTrip is the Client implementation of http.RoundTripper. Used to hook
+// into an http.Request before being set to the server.
+func (c *Client) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	if c.Auth != nil {
+		c.Auth.Set(req)
+	}
+	return c.Transport.RoundTrip(req)
 }
 
 // Authenticator is the interface all auth methods must satisfy.
@@ -58,36 +79,6 @@ type TokenAuth struct {
 func (a *TokenAuth) Set(req *http.Request) {
 	bearer := strings.Join([]string{"bearer", a.Token}, " ")
 	req.Header.Set("Authorization", bearer)
-}
-
-// New takes a Config and returns a fully initialized Client.
-func New(cfg Config) (*Client, error) {
-	host, err := url.Parse(cfg.Host)
-	if err != nil {
-		return nil, ErrURLInvalid
-	}
-
-	var transport http.RoundTripper
-	if &cfg.Transport != nil {
-		transport = cfg.Transport
-	} else {
-		transport = &DefaultTransport
-	}
-
-	c := &Client{
-		Host:      host,
-		Transport: transport,
-	}
-	return c, nil
-}
-
-// RoundTrip is the Client implementation of http.RoundTripper. Used to hook
-// into an http.Request before being set to the server.
-func (c *Client) RoundTrip(req *http.Request) (resp *http.Response, err error) {
-	if c.Auth != nil {
-		c.Auth.Set(req)
-	}
-	return c.Transport.RoundTrip(req)
 }
 
 // NewDistributionAPI returns a fully initialized API for interacting with
