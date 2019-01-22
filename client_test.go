@@ -33,3 +33,27 @@ func TestNewClient(t *testing.T) {
 		t.Run(tc.name, tf)
 	}
 }
+
+func TestAuthSchemes(t *testing.T) {
+	tt := []struct {
+		name string
+		auth Authenticator
+	}{
+		{"basic auth", &BasicAuth{"user", "password"}},
+		{"token auth", &TokenAuth{"token"}},
+	}
+
+	for _, tc := range tt {
+		tf := func(t *testing.T) {
+			req := new(http.Request)
+			req.Header = make(http.Header)
+			tc.auth.Set(req)
+
+			val := req.Header.Get("Authorization")
+			if val == "" {
+				t.Fatal("authorization header not set")
+			}
+		}
+		t.Run(tc.name, tf)
+	}
+}
