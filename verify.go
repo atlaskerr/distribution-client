@@ -5,7 +5,9 @@ import (
 )
 
 // Verify verifies that the registry is OCI-compliant.
-func (c *Client) Verify() (bool, error) {
+func (api *DistributionAPI) Verify() (bool, error) {
+	c := api.client
+
 	u := *c.BaseEndpoint
 	u.Path = "/v2"
 
