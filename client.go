@@ -19,16 +19,16 @@ var DefaultTransport = http.Transport{ResponseHeaderTimeout: time.Second}
 
 // Client is an implementation of http.RoundTripper.
 type Client struct {
-	BaseEndpoint *url.URL
-	Transport    http.RoundTripper
-	Auth         Authenticator
+	Host      *url.URL
+	Transport http.RoundTripper
+	Auth      Authenticator
 }
 
 // Config defines the parameters for Client configuration.
 type Config struct {
-	BaseEndpoint string
-	Transport    http.RoundTripper
-	Auth         Authenticator
+	Host      string
+	Transport http.RoundTripper
+	Auth      Authenticator
 }
 
 // Authenticator is the interface all auth methods must satisfy.
@@ -62,7 +62,7 @@ func (a *TokenAuth) Set(req *http.Request) {
 
 // New takes a Config and returns a fully initialized Client.
 func New(cfg Config) (*Client, error) {
-	host, err := url.Parse(cfg.BaseEndpoint)
+	host, err := url.Parse(cfg.Host)
 	if err != nil {
 		return nil, ErrURLInvalid
 	}
@@ -75,8 +75,8 @@ func New(cfg Config) (*Client, error) {
 	}
 
 	c := &Client{
-		BaseEndpoint: host,
-		Transport:    transport,
+		Host:      host,
+		Transport: transport,
 	}
 	return c, nil
 }

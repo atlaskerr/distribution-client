@@ -8,7 +8,7 @@ import (
 func (api *DistributionAPI) Verify() (bool, error) {
 	c := api.client
 
-	u := *c.BaseEndpoint
+	u := *c.Host
 	u.Path = "/v2"
 
 	req := &http.Request{
