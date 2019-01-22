@@ -83,8 +83,13 @@ func (c *Client) RoundTrip(req *http.Request) (resp *http.Response, err error) {
 	return c.Transport.RoundTrip(req)
 }
 
-// Distribution defines the methods available for interacting with an
-// OCI-compliant registry.
-type Distribution interface {
-	Verify() (bool, error)
+// NewDistributionAPI returns a fully initialized API for interacting with
+// a remote registry.
+func NewDistributionAPI(c *Client) *DistributionAPI {
+	return &DistributionAPI{client: c}
+}
+
+// DistributionAPI contains methods for interacting with a remote registry.
+type DistributionAPI struct {
+	client *Client
 }
