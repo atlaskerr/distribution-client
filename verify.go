@@ -9,6 +9,10 @@ import (
 // verification check.
 var ErrNotOCI = errors.New("distribution: registry isn't OCI-compliant")
 
+// HeaderVersionCheck is the header defined in the distribution spec that
+// clients use to verify that a registry is OCI-compliant.
+var HeaderVersionCheck = "Docker-Distribution-Api-Version"
+
 // Verify verifies that the registry is OCI-compliant.
 func (api *DistributionAPI) Verify() error {
 	c := api.client
@@ -19,13 +23,14 @@ func (api *DistributionAPI) Verify() error {
 	req := &http.Request{
 		Method: "GET",
 		URL:    &u,
+		Header: make(http.Header),
 	}
 	resp, err := c.RoundTrip(req)
 	if err != nil {
 		return err
 	}
 
-	dockerHeader := resp.Header.Get("Docker-Distribution-Api-Version")
+	dockerHeader := resp.Header.Get(HeaderVersionCheck)
 	if dockerHeader != "registry/2.0" {
 		return ErrNotOCI
 	}

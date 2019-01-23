@@ -39,6 +39,7 @@ func New(cfg Config) (*Client, error) {
 	c := &Client{
 		Host:      host,
 		Transport: transport,
+		Auth:      cfg.Auth,
 	}
 	return c, nil
 }
