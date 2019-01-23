@@ -1,17 +1,8 @@
 package client
 
 import (
-	"errors"
 	"net/http"
 )
-
-// ErrNotOCI is an error returned when a remote registry fails an OCI compliance
-// verification check.
-var ErrNotOCI = errors.New("distribution: registry isn't OCI-compliant")
-
-// HeaderVersionCheck is the header defined in the distribution spec that
-// clients use to verify that a registry is OCI-compliant.
-var HeaderVersionCheck = "Docker-Distribution-Api-Version"
 
 // Verify verifies that the registry is OCI-compliant.
 func (api *DistributionAPI) Verify() error {
@@ -30,7 +21,7 @@ func (api *DistributionAPI) Verify() error {
 		return err
 	}
 
-	dockerHeader := resp.Header.Get(HeaderVersionCheck)
+	dockerHeader := resp.Header.Get(headerVersionCheck)
 	if dockerHeader != "registry/2.0" {
 		return ErrNotOCI
 	}

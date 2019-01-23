@@ -45,14 +45,14 @@ func TestOCIVerify(t *testing.T) {
 
 func testVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/v2" {
-		w.Header().Set(HeaderVersionCheck, "registry/2.0")
+		w.Header().Set(headerVersionCheck, "registry/2.0")
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
 func testInvalidVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/v2" {
-		w.Header().Set(HeaderVersionCheck, "invalid")
+		w.Header().Set(headerVersionCheck, "invalid")
 		w.WriteHeader(http.StatusOK)
 	}
 }

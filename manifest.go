@@ -1,7 +1,6 @@
 package client
 
 import (
-	"errors"
 	"net/http"
 	"path"
 
@@ -13,8 +12,6 @@ type Manifest interface {
 	DeleteManifest(repo, reference string) error
 	PutManifest(repo, reference string, manifest ispec.Manifest) error
 }
-
-var ErrManifestNotExist = errors.New("distribution: manifest does not exist")
 
 // VerifyManifest confirms the existance of a manifest in a remote registry.
 func (api *DistributionAPI) VerifyManifest(repo, reference string) error {
@@ -43,7 +40,7 @@ func (api *DistributionAPI) VerifyManifest(repo, reference string) error {
 	//	ispec.MediaTypeImageIndex,
 	//}
 	//acceptHeaderValue := strings.Join(manifestSlice, ",")
-	//req.Header.Set("Accept", acceptHeaderValue)
+	//req.Header.Set(headerAccept, acceptHeaderValue)
 
 	return nil
 }
