@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 )
@@ -53,6 +54,44 @@ func TestAuthSchemes(t *testing.T) {
 			if val == "" {
 				t.Fatal("authorization header not set")
 			}
+		}
+		t.Run(tc.name, tf)
+	}
+}
+
+type badTransport struct{}
+
+func (t *badTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return nil, fmt.Errorf("bad round trip")
+}
+
+func TestRoundTrip(t *testing.T) {
+	tt := []struct {
+		name      string
+		transport http.RoundTripper
+		valid     bool
+	}{
+		{"valid round trip", &DefaultTransport, true},
+		{"bad round trip", &badTransport{}, false},
+	}
+
+	for _, tc := range tt {
+		tf := func(t *testing.T) {
+			cfg := Config{
+				Host:      "http://localhost",
+				Transport: tc.transport,
+			}
+			c, err := New(cfg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			req, _ := http.NewRequest("GET", "http://localhost", nil)
+			_, err = c.Transport.RoundTrip(req)
+			if err == nil && !tc.valid {
+				t.Fatal("expected valid transport")
+			}
+
 		}
 		t.Run(tc.name, tf)
 	}
