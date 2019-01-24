@@ -3,6 +3,7 @@ package client
 import (
 	"net/http"
 	"path"
+	//"strings"
 
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -34,13 +35,33 @@ func (api *DistributionAPI) VerifyManifest(repo, reference string) error {
 		return ErrManifestNotExist
 	}
 
-	// TODO (atlaskerr): Move block to GetManifest method.
-	//manifestSlice := []string{
-	//	ispec.MediaTypeImageManifest,
-	//	ispec.MediaTypeImageIndex,
-	//}
-	//acceptHeaderValue := strings.Join(manifestSlice, ",")
-	//req.Header.Set(headerAccept, acceptHeaderValue)
-
 	return nil
 }
+
+//func (api *DistributionAPI) GetManifest(
+//	repo string, reference string) (ispec.Manifest, error) {
+//	c := api.client
+//
+//	u := *c.Host
+//	u.Path = path.Join("/v2", repo, "manifests", reference)
+//
+//	req := &http.Request{
+//		Method: "GET",
+//		URL:    &u,
+//		Header: make(http.Header),
+//	}
+//
+//	manifestSlice := []string{
+//		ispec.MediaTypeImageManifest,
+//		ispec.MediaTypeImageIndex,
+//	}
+//
+//	acceptHeaderValue := strings.Join(manifestSlice, ",")
+//	req.Header.Set(headerAccept, acceptHeaderValue)
+//
+//	resp, err := c.RoundTrip(req)
+//	if err != nil {
+//		return err
+//	}
+//
+//}
