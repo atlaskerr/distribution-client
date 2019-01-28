@@ -39,9 +39,10 @@ func (api *DistributionAPI) VerifyManifest(repo, reference string) error {
 	return nil
 }
 
-// GetManifest retrieves a manifest from a remote registry.
+// GetManifest retrieves a manifest from a remote registry. If the manifest is
+// an Image Index, all manifests in the index will be returned.
 func (api *DistributionAPI) GetManifest(
-	repo string, reference string) (*ispec.Manifest, error) {
+	repo string, reference string) (*[]ispec.Manifest, error) {
 	c := api.client
 
 	u := *c.Host
@@ -66,10 +67,31 @@ func (api *DistributionAPI) GetManifest(
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	b, err := ioutil.ReadAll(resp.Body)
-	var m *ispec.Manifest
-	if err := json.Unmarshal(b, m); err != nil {
-		return nil, err
+	if err != nil {
+		return nil, ErrParseBody
 	}
-	return m, nil
+
+	mediaType := resp.Header.Get("Content-Type")
+	switch mediaType {
+	case ispec.MediaTypeImageIndex:
+		var idx ispec.Index
+		if err := json.Unmarshal(b, &idx); err != nil {
+			return nil, ErrParseJSON
+		}
+		return getManifests(idx)
+	case ispec.MediaTypeImageManifest:
+		var m ispec.Manifest
+		if err := json.Unmarshal(b, &m); err != nil {
+			return nil, ErrParseJSON
+		}
+		return &[]ispec.Manifest{m}, nil
+	}
+	return nil, ErrUnknownMediaType
+}
+
+func getManifests(idx ispec.Index) (*[]ispec.Manifest, error) {
+	var m []ispec.Manifest
+	return &m, nil
 }

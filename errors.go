@@ -15,4 +15,10 @@ var (
 	// ErrBlobNotExist is an error returned when a blob does not exist in
 	// a repository.
 	ErrBlobNotExist = errors.New("distribution: blob does not exist")
+
+	ErrParseBody = errors.New("distribtuion: could not read response body")
+
+	ErrParseJSON = errors.New("distribution: could not parse JSON")
+
+	ErrUnknownMediaType = errors.New("distribution: unknown media type")
 )
