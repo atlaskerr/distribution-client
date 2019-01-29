@@ -21,4 +21,8 @@ var (
 	ErrParseJSON = errors.New("distribution: could not parse JSON")
 
 	ErrUnknownMediaType = errors.New("distribution: unknown media type")
+
+	ErrSchemaValidation = errors.New("distribution: unable to validate schema")
+
+	ErrInvalidIndex = errors.New("distribution: invalid image index")
 )

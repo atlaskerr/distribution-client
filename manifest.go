@@ -7,7 +7,9 @@ import (
 	"path"
 	"strings"
 
+	ischema "github.com/atlaskerr/oci-schemas"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 type Manifest interface {
@@ -73,14 +75,25 @@ func (api *DistributionAPI) GetManifest(
 		return nil, ErrParseBody
 	}
 
+	loader := gojsonschema.NewBytesLoader(b)
+
 	mediaType := resp.Header.Get("Content-Type")
 	switch mediaType {
 	case ispec.MediaTypeImageIndex:
+		schema := ischema.ImageIndexSchema()
+		result, err := schema.Validate(loader)
+		if err != nil {
+			return nil, ErrSchemaValidation
+		}
+
+		if !result.Valid() {
+			return nil, ErrInvalidIndex
+		}
 		var idx ispec.Index
 		if err := json.Unmarshal(b, &idx); err != nil {
 			return nil, ErrParseJSON
 		}
-		return getManifests(idx)
+		return api.getManifests(idx)
 	case ispec.MediaTypeImageManifest:
 		var m ispec.Manifest
 		if err := json.Unmarshal(b, &m); err != nil {
@@ -91,7 +104,7 @@ func (api *DistributionAPI) GetManifest(
 	return nil, ErrUnknownMediaType
 }
 
-func getManifests(idx ispec.Index) (*[]ispec.Manifest, error) {
+func (api *DistributionAPI) getManifests(idx ispec.Index) (*[]ispec.Manifest, error) {
 	var m []ispec.Manifest
 	return &m, nil
 }
