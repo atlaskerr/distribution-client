@@ -5,6 +5,9 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	ischema "github.com/atlaskerr/oci-schemas"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // DefaultTransport is the optional transport clients may use. Requests to the
@@ -85,10 +88,15 @@ func (a *TokenAuth) Set(req *http.Request) {
 // NewDistributionAPI returns a fully initialized API for interacting with
 // a remote registry.
 func NewDistributionAPI(c *Client) *DistributionAPI {
-	return &DistributionAPI{client: c}
+	api := &DistributionAPI{
+		client:           c,
+		imageIndexSchema: ischema.ImageIndexSchema(),
+	}
+	return api
 }
 
 // DistributionAPI contains methods for interacting with a remote registry.
 type DistributionAPI struct {
-	client *Client
+	client           *Client
+	imageIndexSchema *gojsonschema.Schema
 }

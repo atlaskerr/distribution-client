@@ -2,12 +2,12 @@ package client
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
 
-	ischema "github.com/atlaskerr/oci-schemas"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -72,41 +72,44 @@ func (api *DistributionAPI) GetManifests(
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, ErrParseBody
-	}
-
-	loader := gojsonschema.NewBytesLoader(b)
-
 	mediaType := resp.Header.Get("Content-Type")
-	switch mediaType {
-	case ispec.MediaTypeImageIndex:
-		schema := ischema.ImageIndexSchema()
-		result, err := schema.Validate(loader)
-		if err != nil {
-			return nil, nil, ErrSchemaValidation
-		}
 
-		if !result.Valid() {
-			return nil, nil, ErrInvalidIndex
+	if mediaType == ispec.MediaTypeImageIndex {
+		_, err = api.parseIndex(resp.Body)
+		if err != nil {
+			return nil, nil, err
 		}
-		var idx ispec.Index
-		if err := json.Unmarshal(b, &idx); err != nil {
-			return nil, nil, ErrParseJSON
-		}
-		return nil, api.getManifests(idx)
-	case ispec.MediaTypeImageManifest:
-		var m ispec.Manifest
-		if err := json.Unmarshal(b, &m); err != nil {
-			return nil, nil, ErrParseJSON
-		}
-		return nil, &[]ispec.Manifest{m}, nil
 	}
+
 	return nil, nil, ErrUnknownMediaType
 }
 
 func (api *DistributionAPI) getManifests(idx ispec.Index) (*[]ispec.Manifest, error) {
 	var m []ispec.Manifest
 	return &m, nil
+}
+
+func (api *DistributionAPI) parseIndex(idx io.Reader) (*ispec.Index, error) {
+	b, err := ioutil.ReadAll(idx)
+	if err != nil {
+		return nil, err
+	}
+
+	loader := gojsonschema.NewBytesLoader(b)
+	res, err := api.imageIndexSchema.Validate(loader)
+	if err != nil {
+		return nil, ErrSchemaValidation
+	}
+
+	if !res.Valid() {
+		return nil, ErrInvalidIndex
+	}
+
+	var index *ispec.Index
+	err = json.Unmarshal(b, index)
+	if err != nil {
+		return nil, ErrParseJSON
+	}
+
+	return index, nil
 }
