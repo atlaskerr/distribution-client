@@ -41,10 +41,12 @@ func (api *DistributionAPI) VerifyManifest(repo, reference string) error {
 	return nil
 }
 
-// GetManifest retrieves a manifest from a remote registry. If the manifest is
-// an Image Index, all manifests in the index will be returned.
-func (api *DistributionAPI) GetManifest(
-	repo string, reference string) (*[]ispec.Manifest, error) {
+// GetManifests returns an image index and a slice of manifests from a remote
+// registry. If the manifest is an Image Index, all manifests referenced in the
+// index will be downloaded and returned. If a nil Index is returned, there will
+// only be one manifest in the slice.
+func (api *DistributionAPI) GetManifests(
+	repo string, reference string) (*ispec.Index, *[]ispec.Manifest, error) {
 	c := api.client
 
 	u := *c.Host
@@ -66,13 +68,13 @@ func (api *DistributionAPI) GetManifest(
 
 	resp, err := c.RoundTrip(req)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer resp.Body.Close()
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, ErrParseBody
+		return nil, nil, ErrParseBody
 	}
 
 	loader := gojsonschema.NewBytesLoader(b)
@@ -83,25 +85,25 @@ func (api *DistributionAPI) GetManifest(
 		schema := ischema.ImageIndexSchema()
 		result, err := schema.Validate(loader)
 		if err != nil {
-			return nil, ErrSchemaValidation
+			return nil, nil, ErrSchemaValidation
 		}
 
 		if !result.Valid() {
-			return nil, ErrInvalidIndex
+			return nil, nil, ErrInvalidIndex
 		}
 		var idx ispec.Index
 		if err := json.Unmarshal(b, &idx); err != nil {
-			return nil, ErrParseJSON
+			return nil, nil, ErrParseJSON
 		}
-		return api.getManifests(idx)
+		return nil, api.getManifests(idx)
 	case ispec.MediaTypeImageManifest:
 		var m ispec.Manifest
 		if err := json.Unmarshal(b, &m); err != nil {
-			return nil, ErrParseJSON
+			return nil, nil, ErrParseJSON
 		}
-		return &[]ispec.Manifest{m}, nil
+		return nil, &[]ispec.Manifest{m}, nil
 	}
-	return nil, ErrUnknownMediaType
+	return nil, nil, ErrUnknownMediaType
 }
 
 func (api *DistributionAPI) getManifests(idx ispec.Index) (*[]ispec.Manifest, error) {
