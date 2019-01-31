@@ -76,9 +76,16 @@ func (api *DistributionAPI) GetManifests(
 			return nil, nil, err
 		}
 
+		manifests := make([]ispec.Manifest, 0)
 		for _, desc := range idx.Manifests {
-			_, _ = api.getManifest(repo, desc.Digest)
+			m, err := api.getManifest(repo, desc.Digest)
+			if err != nil {
+				return idx, nil, err
+			}
+			manifests = append(manifests, *m)
 		}
+
+		return idx, &manifests, nil
 
 	}
 
