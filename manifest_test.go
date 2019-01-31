@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestManifestVerify(t *testing.T) {
+func TestVerifyManifest(t *testing.T) {
 	tt := []struct {
 		name      string
 		transport http.RoundTripper
