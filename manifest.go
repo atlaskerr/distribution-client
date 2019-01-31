@@ -122,6 +122,29 @@ func (api *DistributionAPI) getManifest(repo string, digest digest.Digest) (*isp
 	return manifest, nil
 }
 
+func (api *DistributionAPI) parseManifest(m io.Reader) (*ispec.Manifest, error) {
+	b, err := ioutil.ReadAll(m)
+	if err != nil {
+		return nil, err
+	}
+
+	loader := gojsonschema.NewBytesLoader(b)
+	res, err := api.imageManifestSchema.Validate(loader)
+	if err != nil {
+		return nil, ErrSchemaValidation
+	}
+
+	if !res.Valid() {
+		return nil, ErrInvalidManifest
+	}
+
+	var manifest *ispec.Manifest
+	if err := json.Unmarshal(b, manifest); err != nil {
+		return nil, ErrParseJSON
+	}
+	return manifest, nil
+}
+
 func (api *DistributionAPI) parseIndex(idx io.Reader) (*ispec.Index, error) {
 	b, err := ioutil.ReadAll(idx)
 	if err != nil {

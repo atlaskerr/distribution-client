@@ -89,14 +89,16 @@ func (a *TokenAuth) Set(req *http.Request) {
 // a remote registry.
 func NewDistributionAPI(c *Client) *DistributionAPI {
 	api := &DistributionAPI{
-		client:           c,
-		imageIndexSchema: ischema.ImageIndexSchema(),
+		client:              c,
+		imageIndexSchema:    ischema.ImageIndexSchema(),
+		imageManifestSchema: ischema.ImageManifestSchema(),
 	}
 	return api
 }
 
 // DistributionAPI contains methods for interacting with a remote registry.
 type DistributionAPI struct {
-	client           *Client
-	imageIndexSchema *gojsonschema.Schema
+	client              *Client
+	imageIndexSchema    *gojsonschema.Schema
+	imageManifestSchema *gojsonschema.Schema
 }
