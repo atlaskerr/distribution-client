@@ -115,11 +115,7 @@ func (api *DistributionAPI) getManifest(repo string, digest digest.Digest) (*isp
 		return nil, errorResp
 	}
 
-	var manifest *ispec.Manifest
-	if err := json.Unmarshal(b, manifest); err != nil {
-		return nil, ErrParseJSON
-	}
-	return manifest, nil
+	return api.parseManifest(resp.Body)
 }
 
 func (api *DistributionAPI) parseManifest(m io.Reader) (*ispec.Manifest, error) {
