@@ -2,6 +2,8 @@ package client
 
 import (
 	"errors"
+
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // Error satisfies the Error interface.
