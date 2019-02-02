@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
-	"strings"
 
 	digest "github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -46,7 +45,7 @@ func (api *DistributionAPI) GetManifests(
 	c := api.client
 
 	u := *c.Host
-	u.Path = path.Join("/v2", repo, "manifests", reference)
+	u.Path = manifestEndpoint(repo, reference)
 
 	req := &http.Request{
 		Method: "GET",
@@ -54,13 +53,11 @@ func (api *DistributionAPI) GetManifests(
 		Header: make(http.Header),
 	}
 
-	manifestSlice := []string{
-		ispec.MediaTypeImageManifest,
+	allowMediaTypes(
+		req,
 		ispec.MediaTypeImageIndex,
-	}
-
-	acceptHeaderValue := strings.Join(manifestSlice, ",")
-	req.Header.Set(headerAccept, acceptHeaderValue)
+		ispec.MediaTypeImageManifest,
+	)
 
 	resp, err := c.RoundTrip(req)
 	if err != nil {
@@ -68,28 +65,32 @@ func (api *DistributionAPI) GetManifests(
 	}
 	defer resp.Body.Close()
 
-	mediaType := resp.Header.Get("Content-Type")
+	var idx *ispec.Index
+	manifests := make([]ispec.Manifest, 0)
 
-	if mediaType == ispec.MediaTypeImageIndex {
-		idx, err := api.parseIndex(resp.Body)
+	contentType := resp.Header.Get("Content-Type")
+	switch contentType {
+	case ispec.MediaTypeImageIndex:
+		err := validate(resp.Body, *api.imageIndexSchema)
 		if err != nil {
 			return nil, nil, err
 		}
+		parseIndex(resp.Body, idx)
 
-		manifests := make([]ispec.Manifest, 0)
-		for _, desc := range idx.Manifests {
-			m, err := api.getManifest(repo, desc.Digest)
-			if err != nil {
-				return idx, nil, err
-			}
-			manifests = append(manifests, *m)
+	case ispec.MediaTypeImageManifest:
+		err := validate(resp.Body, *api.imageManifestSchema)
+		if err != nil {
+			return nil, nil, err
 		}
+		var m *ispec.Manifest
+		parseManifest(resp.Body, m)
+		manifests = append(manifests, *m)
 
-		return idx, &manifests, nil
-
+	default:
+		return nil, nil, ErrUnknownMediaType
 	}
 
-	return nil, nil, ErrUnknownMediaType
+	return idx, &manifests, nil
 }
 
 func (api *DistributionAPI) getManifest(repo string, digest digest.Digest) (*ispec.Manifest, error) {
@@ -125,52 +126,30 @@ func (api *DistributionAPI) getManifest(repo string, digest digest.Digest) (*isp
 	return api.parseManifest(resp.Body)
 }
 
-func (api *DistributionAPI) parseManifest(m io.Reader) (*ispec.Manifest, error) {
+func parseManifest(data io.Reader, manifest *ispec.Manifest) error {
 	b, err := ioutil.ReadAll(m)
 	if err != nil {
 		return nil, err
 	}
 
-	loader := gojsonschema.NewBytesLoader(b)
-	res, err := api.imageManifestSchema.Validate(loader)
-	if err != nil {
-		return nil, ErrSchemaValidation
-	}
-
-	if !res.Valid() {
-		return nil, ErrInvalidManifest
-	}
-
-	var manifest *ispec.Manifest
 	if err := json.Unmarshal(b, manifest); err != nil {
 		return nil, ErrParseJSON
 	}
 	return manifest, nil
 }
 
-func (api *DistributionAPI) parseIndex(idx io.Reader) (*ispec.Index, error) {
-	b, err := ioutil.ReadAll(idx)
+func parseIndex(data io.Reader, idx *ispec.Index) error {
+	b, err := ioutil.ReadAll(data)
 	if err != nil {
 		return nil, err
 	}
 
-	loader := gojsonschema.NewBytesLoader(b)
-	res, err := api.imageIndexSchema.Validate(loader)
-	if err != nil {
-		return nil, ErrSchemaValidation
-	}
-
-	if !res.Valid() {
-		return nil, ErrInvalidIndex
-	}
-
-	var index *ispec.Index
-	err = json.Unmarshal(b, index)
+	err = json.Unmarshal(b, idx)
 	if err != nil {
 		return nil, ErrParseJSON
 	}
 
-	return index, nil
+	return nil
 }
 
 func validate(data io.Reader, schema gojsonschema.Schema) error {
@@ -190,4 +169,8 @@ func validate(data io.Reader, schema gojsonschema.Schema) error {
 	}
 
 	return nil
+}
+
+func manifestEndpoint(repo, reference string) string {
+	return path.Join("/v2", repo, "manifests", reference)
 }
