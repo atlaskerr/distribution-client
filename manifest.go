@@ -13,17 +13,15 @@ import (
 )
 
 // VerifyManifest confirms the existance of a manifest in a remote registry.
-func (api *DistributionAPI) VerifyManifest(repo, reference string) error {
-	c := api.client
+func (r *Registry) VerifyManifest(repo, reference string) error {
+	c := r.client
 
-	u := *c.Host
-	u.Path = path.Join("/v2", repo, "manifests", reference)
+	req := new(http.Request)
+	req.Method = "HEAD"
+	req.URL = r.Host
+	req.URL.Path = manifestEndpoint(repo, reference)
+	req.Header = make(http.Header)
 
-	req := &http.Request{
-		Method: "HEAD",
-		URL:    &u,
-		Header: make(http.Header),
-	}
 	resp, err := c.RoundTrip(req)
 	if err != nil {
 		return err
