@@ -13,13 +13,13 @@ import (
 )
 
 // VerifyManifest confirms the existance of a manifest in a remote registry.
-func (r *Registry) VerifyManifest(repo, reference string) error {
+func (r *Registry) VerifyManifest(img Image) error {
 	c := r.client
 
 	req := new(http.Request)
 	req.Method = "HEAD"
 	req.URL = r.Host
-	req.URL.Path = manifestEndpoint(repo, reference)
+	req.URL.Path = manifestEndpoint(img.Repository, img.Reference)
 	req.Header = make(http.Header)
 
 	resp, err := c.RoundTrip(req)
@@ -38,7 +38,7 @@ func (r *Registry) VerifyManifest(repo, reference string) error {
 // registry. If the manifest is an Image Index, all manifests referenced in the
 // index will be downloaded and returned. If a nil Index is returned, there will
 // only be one manifest in the slice.
-func (api *DistributionAPI) GetManifests(
+func (r *Registry) GetManifests(
 	repo string, reference string) (*ispec.Index, *[]ispec.Manifest, error) {
 	c := api.client
 
