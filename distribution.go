@@ -1,9 +1,11 @@
 package client
 
 import (
+	"net/http"
 	"net/url"
 
 	ischema "github.com/atlaskerr/oci-schemas"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 // NewDistributionAPI returns a fully initialized API for interacting with
@@ -20,20 +22,33 @@ func NewDistributionAPI(c *Client) *DistributionAPI {
 // DistributionAPI contains methods for interacting with a remote registry.
 type DistributionAPI struct {
 	client              *Client
+	validator           *Validator
 	imageIndexSchema    *gojsonschema.Schema
 	imageManifestSchema *gojsonschema.Schema
 }
 
 // NewRegistry returns a fully initialized Registry.
-func (api *DistributionAPI) NewRegistry(host string, auth Authenticator) *Registry {
+func (api *DistributionAPI) NewRegistry(host string, auth *Authenticator) *Registry {
 	hostURL, _ := url.Parse(host)
 
 	return &Registry{
-		Client *Client
+		client: api.client,
+		Host:   hostURL,
+		Auth:   *auth,
 	}
 }
 
 // Registry represents a remote OCI-compliant registries.
 type Registry struct {
-	Client *Client
+	client *Client
+	Host   *url.URL
+	Auth   Authenticator
+}
+
+// RoundTrip is the Registry implementation of http.RoundTripper.
+func (r *Registry) RoundTrip(req *http.Request) (resp *http.Response, err error) {
+	if r.Auth != nil {
+		r.Auth.Set(req)
+	}
+	return r.client.RoundTrip(req)
 }
