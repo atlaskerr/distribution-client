@@ -51,3 +51,9 @@ func (r *Registry) RoundTrip(req *http.Request) (resp *http.Response, err error)
 	}
 	return r.client.RoundTrip(req)
 }
+
+// Image represents an image located on a remote registry.
+type Image struct {
+	Repository string
+	Reference  string
+}
