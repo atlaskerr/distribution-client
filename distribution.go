@@ -22,7 +22,6 @@ func NewDistributionAPI(c *Client) *DistributionAPI {
 // DistributionAPI contains methods for interacting with a remote registry.
 type DistributionAPI struct {
 	client              *Client
-	validator           *Validator
 	imageIndexSchema    *gojsonschema.Schema
 	imageManifestSchema *gojsonschema.Schema
 }
