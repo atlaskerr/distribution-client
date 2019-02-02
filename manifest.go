@@ -172,3 +172,22 @@ func (api *DistributionAPI) parseIndex(idx io.Reader) (*ispec.Index, error) {
 
 	return index, nil
 }
+
+func validate(data io.Reader, schema gojsonschema.Schema) error {
+	b, err := ioutil.ReadAll(data)
+	if err != nil {
+		return err
+	}
+
+	loader := gojsonschema.NewBytesLoader(b)
+	res, err := schema.Validate(loader)
+	if err != nil {
+		return ErrSchemaValidation
+	}
+
+	if !res.Valid() {
+		return ValidationError(res.Errors())
+	}
+
+	return nil
+}

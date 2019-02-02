@@ -34,3 +34,11 @@ var (
 	ErrInvalidIndex     = errors.New("distribution: registry returned invalid index")
 	ErrInvalidManifest  = errors.New("distribution: registry returned invalid manifest")
 )
+
+type ValidationError []gojsonschema.ResultError
+
+var ErrInvalidSchema = "distribution: invalid schema"
+
+func (ve *ValidationError) Error() string {
+	return ErrInvalidSchema
+}
