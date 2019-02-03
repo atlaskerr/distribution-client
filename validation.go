@@ -2,6 +2,7 @@ package client
 
 import (
 	"io"
+	"io/ioutil"
 
 	ischema "github.com/atlaskerr/oci-schemas"
 	"github.com/xeipuuv/gojsonschema"
@@ -13,11 +14,11 @@ var (
 )
 
 func validateIndex(data io.Reader) error {
-	return validate(data, imageIndexSchema)
+	return validate(data, *imageIndexSchema)
 }
 
 func validateManifest(data io.Reader) error {
-	return validate(data, imageManifestSchema)
+	return validate(data, *imageManifestSchema)
 }
 
 func validate(data io.Reader, schema gojsonschema.Schema) error {
@@ -33,7 +34,9 @@ func validate(data io.Reader, schema gojsonschema.Schema) error {
 	}
 
 	if !res.Valid() {
-		return ValidationError(res.Errors())
+		e := res.Errors()
+		verr := ValidationError(e)
+		return &verr
 	}
 
 	return nil
