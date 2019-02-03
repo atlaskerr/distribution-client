@@ -10,8 +10,8 @@ import (
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-// VerifyManifest confirms the existance of a manifest in a remote registry.
-func (r *Registry) VerifyManifest(img Image) error {
+// ManifestExists confirms the existance of a manifest in a remote registry.
+func (r *Registry) ManifestExists(img Image) error {
 	c := r.client
 
 	req := new(http.Request)
@@ -120,6 +120,10 @@ func (r *Registry) getManifest(img Image) (*ispec.Manifest, error) {
 	}
 
 	return m, nil
+}
+
+func (r *Registry) manifestsFromIndex(idx ispec.Index) (*[]ispec.Manifest, error) {
+	return nil, nil
 }
 
 func parseManifest(data io.Reader, manifest *ispec.Manifest) error {
