@@ -9,7 +9,6 @@ import (
 
 	digest "github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/xeipuuv/gojsonschema"
 )
 
 // VerifyManifest confirms the existance of a manifest in a remote registry.
@@ -86,17 +85,17 @@ func (r *Registry) GetManifests(img Image) (*ispec.Index, *[]ispec.Manifest, err
 	return idx, &manifests, nil
 }
 
-func (api *DistributionAPI) getManifest(repo string, digest digest.Digest) (*ispec.Manifest, error) {
-	c := api.client
+func (r *Registry) getManifest(img Image) (*ispec.Manifest, error) {
+	c := r.client
 
-	u := *c.Host
-	u.Path = path.Join("/v2", repo, "manifests", digest.String())
+	req := new(http.Request)
+	req.Method = "GET"
+	req.URL = r.Host
+	req.URL.Path = manifestEndpoint(img.Repository, img.Reference)
+	req.Header = make(http.Header)
 
-	req := &http.Request{
-		Method: "GET",
-		URL:    &u,
-		Header: make(http.Header),
-	}
+	req.Header["Accept"] = []string{ispec.MediaTypeImageManifest}
+
 	resp, err := c.RoundTrip(req)
 	if err != nil {
 		return nil, err
@@ -105,7 +104,7 @@ func (api *DistributionAPI) getManifest(repo string, digest digest.Digest) (*isp
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, ErrParseBody
+		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -116,7 +115,12 @@ func (api *DistributionAPI) getManifest(repo string, digest digest.Digest) (*isp
 		return nil, errorResp
 	}
 
-	return api.parseManifest(resp.Body)
+	var m *ispec.Manifest
+	if err := parseManifest(resp.Body, m); err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 func parseManifest(data io.Reader, manifest *ispec.Manifest) error {
