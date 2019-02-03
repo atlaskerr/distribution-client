@@ -137,12 +137,11 @@ func parseManifest(data io.Reader, manifest *ispec.Manifest) error {
 func parseIndex(data io.Reader, idx *ispec.Index) error {
 	b, err := ioutil.ReadAll(data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = json.Unmarshal(b, idx)
-	if err != nil {
-		return nil, ErrParseJSON
+	if err := json.Unmarshal(b, idx); err != nil {
+		return ErrParseJSON
 	}
 
 	return nil
