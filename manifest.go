@@ -38,24 +38,19 @@ func (r *Registry) VerifyManifest(img Image) error {
 // registry. If the manifest is an Image Index, all manifests referenced in the
 // index will be downloaded and returned. If a nil Index is returned, there will
 // only be one manifest in the slice.
-func (r *Registry) GetManifests(
-	repo string, reference string) (*ispec.Index, *[]ispec.Manifest, error) {
-	c := api.client
+func (r *Registry) GetManifests(img Image) (*ispec.Index, *[]ispec.Manifest, error) {
+	c := r.client
 
-	u := *c.Host
-	u.Path = manifestEndpoint(repo, reference)
+	req := new(http.Request)
+	req.Method = "GET"
+	req.URL = r.Host
+	req.URL.Path = manifestEndpoint(img.Repository, img.Reference)
+	req.Header = make(http.Header)
 
-	req := &http.Request{
-		Method: "GET",
-		URL:    &u,
-		Header: make(http.Header),
-	}
-
-	allowMediaTypes(
-		req,
+	req.Header["Accept"] = []string{
 		ispec.MediaTypeImageIndex,
 		ispec.MediaTypeImageManifest,
-	)
+	}
 
 	resp, err := c.RoundTrip(req)
 	if err != nil {
@@ -69,14 +64,14 @@ func (r *Registry) GetManifests(
 	contentType := resp.Header.Get("Content-Type")
 	switch contentType {
 	case ispec.MediaTypeImageIndex:
-		err := validate(resp.Body, *api.imageIndexSchema)
+		err := validateIndex(resp.Body)
 		if err != nil {
 			return nil, nil, err
 		}
 		parseIndex(resp.Body, idx)
 
 	case ispec.MediaTypeImageManifest:
-		err := validate(resp.Body, *api.imageManifestSchema)
+		err := validateManifest(resp.Body)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -145,25 +140,6 @@ func parseIndex(data io.Reader, idx *ispec.Index) error {
 	err = json.Unmarshal(b, idx)
 	if err != nil {
 		return nil, ErrParseJSON
-	}
-
-	return nil
-}
-
-func validate(data io.Reader, schema gojsonschema.Schema) error {
-	b, err := ioutil.ReadAll(data)
-	if err != nil {
-		return err
-	}
-
-	loader := gojsonschema.NewBytesLoader(b)
-	res, err := schema.Validate(loader)
-	if err != nil {
-		return ErrSchemaValidation
-	}
-
-	if !res.Valid() {
-		return ValidationError(res.Errors())
 	}
 
 	return nil
