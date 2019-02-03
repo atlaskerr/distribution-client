@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"path"
 
-	digest "github.com/opencontainers/go-digest"
 	ispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -124,15 +123,15 @@ func (r *Registry) getManifest(img Image) (*ispec.Manifest, error) {
 }
 
 func parseManifest(data io.Reader, manifest *ispec.Manifest) error {
-	b, err := ioutil.ReadAll(m)
+	b, err := ioutil.ReadAll(data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err := json.Unmarshal(b, manifest); err != nil {
-		return nil, ErrParseJSON
+		return ErrParseJSON
 	}
-	return manifest, nil
+	return nil
 }
 
 func parseIndex(data io.Reader, idx *ispec.Index) error {
